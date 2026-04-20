@@ -1,14 +1,23 @@
+![](data/emergency_callbox_optimization.png)
+
 # Emergency Call Box Optimization
 
-![Emergency call box optimization result](data/emergency_callbox_optimization.png)
+![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/arantzazu-arregui/emergency-callbox-optimization?include_prereleases)
+![GitHub last commit](https://img.shields.io/github/last-commit/arantzazu-arregui/emergency-callbox-optimization)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/arantzazu-arregui/emergency-callbox-optimization)
+![GitHub](https://img.shields.io/github/license/arantzazu-arregui/emergency-callbox-optimization)
+![contributors](https://img.shields.io/github/contributors/arantzazu-arregui/emergency-callbox-optimization)
+![codesize](https://img.shields.io/github/languages/code-size/arantzazu-arregui/emergency-callbox-optimization)
+
+> A data science and optimization project that digitizes McGill University's downtown campus map and uses mixed-integer programming to decide which emergency call boxes to keep, replace, or newly install.
 
 ## Project Overview
 
-This project studies how to allocate emergency phones across McGill University's downtown campus. The core problem is to improve emergency coverage while limiting total cost. Existing call boxes are uneven in quality, some are outdated or rusted, and the current network does not cover all parts of the campus night-route system effectively.
+This project studies how to improve emergency phone coverage on McGill University's downtown campus while controlling installation cost. The workflow starts with a campus map, extracts spatial information such as existing call box locations, building outlines, and night-route geometry, and then feeds those inputs into a Gurobi optimization model.
 
-Using the campus map as the starting point, the project digitizes existing call box locations, building outlines, and route geometry, then uses those inputs in an optimization model that decides which phones to keep, replace, or newly install.
+In the current notebook snapshot, the model works with `123` possible call box locations, including `23` existing sites and `100` new candidate sites, and evaluates coverage across `98` demand points sampled along campus routes. The target is to satisfy a weighted coverage threshold of `alpha = 0.65`.
 
-**Team**
+Team members:
 
 - Rui Zhao
 - Serena Sun
@@ -16,79 +25,124 @@ Using the campus map as the starting point, the project digitizes existing call 
 - Chloee Liew
 - Nicholas Stanfield
 
-## Formulation
+## Installation and Setup
 
-Following the report, the optimization problem is modeled as a mixed-integer decision problem that minimizes total cost while meeting a minimum weighted coverage requirement.
+This repository is notebook-driven, so the main setup task is preparing a Python environment with the required scientific and optimization libraries.
 
-In the checked-in notebook snapshot, the model uses:
+### Codes and Resources Used
 
-- `123` total possible phone locations
-- `23` existing locations
-- `100` candidate locations
-- `98` demand points
-- a weighted coverage target of `alpha = 0.65`
+- **Editor Used:** Jupyter Notebook / JupyterLab
+- **Python Version:** `3.11.14` in both checked-in notebooks
+- **Optimization Solver:** Gurobi Optimizer `12.0.3` is referenced by the optimization notebook output
+- **GitHub Repository:** [arantzazu-arregui/emergency-callbox-optimization](https://github.com/arantzazu-arregui/emergency-callbox-optimization)
 
-The formulation allows the model to:
+### Python Packages Used
 
-- keep an existing phone at its current location
-- replace an existing phone with a better phone type
-- install a new phone at a candidate location
+- **General Purpose:** `math`, `csv`
+- **Data Manipulation:** `pandas`, `numpy`
+- **Data Visualization:** `matplotlib`, `seaborn`
+- **Image and PDF Processing:** `fitz` (PyMuPDF), `Pillow`, `opencv-python`
+- **Machine Learning / Optimization:** `gurobipy`
 
-The current notebook uses five phone types with coverage radii:
+### Suggested Setup
 
-- `150`, `100`, `60`, `45`, `20`
+1. Clone the repository.
+2. Create a Python 3.11 environment.
+3. Install the libraries used in the notebooks.
+4. Ensure Gurobi is installed and licensed before running the optimization notebook.
+5. Open the notebooks in the `notebooks/` folder and run them from top to bottom.
 
-and costs:
+Example installation commands:
 
-- `$19,500`
-- `$10,500`
-- `$3,500`
-- `$2,000`
-- `$0` for keeping the old phone type
-
-The report provides the main modeling logic used in the notebooks:
-
-- demand points represent locations along the campus route network
-- straight-line distance is used to determine whether a demand point is covered
-- higher-traffic areas receive higher weights
-- old phones may be retained, but keeping lower-quality legacy phones is penalized
-- the old phone type is not installed at new locations
-- existing phones are not downgraded to worse phone types
-
-## Repository Structure
-
-```text
-├── data/
-│   ├── campus_map.pdf                               # Source map (existing call box locations, buildings, and routes)
-│   ├── building_outline_vertices.csv                # Traced campus building boundaries
-│   ├── solid_line_vertices.csv                      # Main night route vertices
-│   ├── dotted_line_vertices.csv                     # Feeder route vertices
-│   ├── exisiting_and_candidate_callbox_coords.csv   # All 123 phone locations
-│   ├── demand_point_coords.csv                      # 98 emergency phone demand points with weights
-│   └── existing_callbox_current_state.csv           # Phone types & conditions at existing locations (Field Observations)
-│
-├── notebooks/
-│   ├── pdf_map_coord_extraction.ipynb               # Step 1: Data extraction
-│   └── callbox_optimization_gurobi.ipynb            # Step 2: Optimization model
-│
-└── README.md
+```bash
+conda create -n emergency-callbox python=3.11
+conda activate emergency-callbox
+pip install pandas numpy matplotlib seaborn pymupdf pillow opencv-python jupyter
+pip install gurobipy
 ```
 
-## Results
+## Data
 
-The preprocessing notebook generates the spatial inputs used by the model and reports:
+The project relies on a campus map plus derived spatial datasets stored as CSV files.
 
-- `100` candidate call box locations
-- demand points sampled every `50` meters
-- `98` total demand points
+### Source Data
 
-The optimization notebook reports the following solution for the current checked-in model run:
+- **`data/campus_map.pdf`**: Source campus map used to identify buildings, routes, and call box locations.
+- **`data/existing_callbox_current_state.csv`**: Current condition data for existing emergency phones, including phone type and state.
+- **`data/exisiting_and_candidate_callbox_coords.csv`**: Combined table of existing and generated candidate call box locations.
+- **`data/demand_point_coords.csv`**: Demand point coordinates with weights used in the optimization model.
+- **`data/building_outline_vertices.csv`**: Traced building polygon boundaries.
+- **`data/solid_line_vertices.csv`**: Main night-route vertices.
+- **`data/dotted_line_vertices.csv`**: Feeder-route vertices.
 
-- total phones in period 1: `38`
-- demand points covered: `60 / 98` (`61.2%`)
-- weighted coverage: `71.0 / 109.0` (`65.1%`)
-- installation costs: `$234,500.00`
+### Data Acquisition
 
-This solution slightly exceeds the model's weighted coverage target of `65%`, which suggests the optimizer is meeting the required service level while concentrating coverage on the more heavily weighted demand points. In practical terms, the result shows that achieving the current target still requires a substantial investment and does not cover every demand location, indicating a tradeoff between cost and broad geographic coverage.
+The acquisition process is implemented in `notebooks/pdf_map_coord_extraction.ipynb`. The notebook converts the campus PDF into an image, detects existing call box icons, traces route and building geometry, generates `100` candidate locations along building boundaries, and writes the combined location file to `data/exisiting_and_candidate_callbox_coords.csv`.
 
-The final plot is saved to `data/emergency_callbox_optimization.png`.
+Demand points are then generated along the mapped routes, and the notebook reports `98` total demand points in the saved output.
+
+### Data Preprocessing
+
+Preprocessing in this project is mostly spatial rather than tabular. The workflow standardizes the map into a pixel-based coordinate system, builds route polylines, assigns weighted demand points, and prepares clean CSV inputs for the optimization model. The optimization notebook then merges those derived coordinates with the current-state file for the existing call boxes.
+
+## Code Structure
+
+The repository is compact and organized around two notebooks plus the generated data assets:
+
+```bash
+.
+|-- data
+|   |-- building_outline_vertices.csv
+|   |-- campus_map.pdf
+|   |-- demand_point_coords.csv
+|   |-- dotted_line_vertices.csv
+|   |-- emergency_callbox_optimization.png
+|   |-- exisiting_and_candidate_callbox_coords.csv
+|   |-- existing_callbox_current_state.csv
+|   `-- solid_line_vertices.csv
+|-- notebooks
+|   |-- callbox_optimization_gurobi.ipynb
+|   `-- pdf_map_coord_extraction.ipynb
+`-- README.md
+```
+
+Key files:
+
+- **`notebooks/pdf_map_coord_extraction.ipynb`**: Extracts and prepares the spatial inputs from the campus map.
+- **`notebooks/callbox_optimization_gurobi.ipynb`**: Builds and solves the mixed-integer optimization model and exports the final visualization.
+- **`data/emergency_callbox_optimization.png`**: Final solution plot generated by the optimization notebook.
+
+## Results and Evaluation
+
+The optimization notebook solves a mixed-integer model that minimizes installation cost while enforcing a weighted coverage requirement.
+
+Current reported results from the checked-in notebook output:
+
+- **Possible phone locations:** `123`
+- **Existing locations:** `23`
+- **Candidate new locations:** `100`
+- **Demand points:** `98`
+- **Demand points covered:** `60/98` (`61.2%`)
+- **Weighted coverage:** `71.0/109.0` (`65.1%`)
+- **Installation costs:** `$234,500.00`
+
+The final weighted coverage slightly exceeds the model target of `65%`, which means the current solution meets the required service level while prioritizing the more heavily weighted demand areas. At the same time, the raw coverage result shows a clear tradeoff: reaching the target still leaves some locations uncovered and requires a substantial capital investment.
+
+## Future Work
+
+- Convert the pixel-based map coordinates into a GIS-ready spatial reference system.
+- Test multiple budget levels and coverage thresholds instead of a single `alpha = 0.65` scenario.
+- Replace straight-line distance with route-based walking distance or visibility-aware coverage.
+- Add robustness checks using incident data, pedestrian traffic, or stakeholder safety priorities.
+- Package the environment in a `requirements.txt` or `environment.yml` file for easier reproduction.
+
+## Acknowledgments/References
+
+- McGill campus map data used as the basis for the spatial extraction workflow.
+- Field-observation data captured in `existing_callbox_current_state.csv`.
+- Gurobi for solving the optimization model.
+- README section structure adapted from the data science README template shared by [pragyy/datascience-readme-template](https://github.com/pragyy/datascience-readme-template).
+
+## License
+
+This repository currently does not include a `LICENSE` file in the checked-in source. Before wider reuse or contribution, add an explicit project license and document any reuse restrictions associated with the campus map and field-observation data.
