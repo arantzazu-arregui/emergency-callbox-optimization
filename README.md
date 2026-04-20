@@ -1,56 +1,78 @@
 # Emergency Call Box Optimization
 
-This repository contains a notebook-based spatial optimization project for campus emergency call boxes. The workflow starts from a campus map, extracts or traces spatial features, generates demand and candidate installation points, and solves a Gurobi optimization model to recommend which call boxes to keep, replace, or install.
+This repository contains a notebook-based emergency call box optimization project for the McGill downtown campus. The workflow starts from a campus map, generates supply and demand inputs, and solves a Gurobi model to decide which emergency phones to keep, replace, or install.
 
-![Emergency call box optimization result](emergency_callbox_optimization.png)
+![Emergency call box optimization result](data/emergency_callbox_optimization.png)
 
-## Project Workflow
+## Team
 
-1. `pdf_map_coord_extraction.ipynb`
-   - Loads `campus_map.pdf`
-   - Detects existing call box icons from the map
-   - Uses traced building outlines to generate candidate call box locations
-   - Uses traced route lines to generate demand points every 50 meters
-   - Exports the CSV inputs used by the optimization model
-2. `callbox_optimization_gurobi.ipynb`
-   - Loads candidate locations, demand points, and current call box state data
-   - Formulates and solves the emergency phone placement model in Gurobi
-   - Reports coverage and installation decisions
-   - Saves the final visualization to `emergency_callbox_optimization.png`
+- Rui Zhao
+- Serena Sun
+- Arantzazu Arregui Gonzalez
+- Chloee Liew
+- Nicholas Stanfield
 
-## Repository Contents
+## Notebook Workflow
 
-- `campus_map.pdf`: source map used for coordinate extraction and tracing
-- `pdf_map_coord_extraction.ipynb`: preprocessing notebook for generating spatial inputs
-- `callbox_optimization_gurobi.ipynb`: optimization notebook
-- `building_outline_vertices.csv`: traced building polygon vertices
-- `solid_line_vertices.csv`: traced main route polyline vertices
-- `dotted_line_vertices.csv`: traced feeder route polyline vertices
-- `exisiting_and_candidate_callbox_coords.csv`: 123 possible call box locations used by the model
-- `existing_callbox_current_state.csv`: state of the 23 currently installed call boxes
-- `demand_point_coords.csv`: 98 weighted demand points generated from campus routes
-- `emergency_callbox_optimization.png`: exported visualization of the solution
+### `notebooks/pdf_map_coord_extraction.ipynb`
 
-## Model Snapshot
+This notebook prepares the spatial inputs used by the optimization model.
 
-The optimization notebook uses:
+- loads `data/campus_map.pdf`
+- detects existing emergency call box icons from the map
+- uses traced building outlines to generate `100` candidate call box locations
+- samples demand points along traced routes every `50` meters
+- writes the processed inputs to the `data/` folder
 
-- 23 existing call box locations
-- 100 generated candidate locations
-- 98 demand points
-- a weighted minimum coverage requirement of `alpha = 0.65`
-- phone-type-specific coverage radii of `150, 100, 60, 45, 20`
+Generated data used by the model:
 
-The current notebook output reports one feasible optimized solution with:
+- `data/exisiting_and_candidate_callbox_coords.csv`
+- `data/demand_point_coords.csv`
+- `data/building_outline_vertices.csv`
+- `data/solid_line_vertices.csv`
+- `data/dotted_line_vertices.csv`
 
-- 38 phones in period 1
-- 60 of 98 demand points covered (`61.2%`)
-- weighted coverage of `71.0 / 109.0` (`65.1%`)
-- installation cost of `$234,500.00`
+The notebook output reports `98` total demand points.
+
+### `notebooks/callbox_optimization_gurobi.ipynb`
+
+This notebook formulates and solves the emergency phone allocation model in Gurobi.
+
+Model inputs from the checked-in notebook snapshot:
+
+- `123` total possible locations
+- `23` existing phone locations
+- `100` candidate locations
+- `98` demand points
+- weighted minimum coverage target `alpha = 0.65`
+- phone coverage radii `150, 100, 60, 45, 20`
+- phone costs `$19,500`, `$10,500`, `$3,500`, `$2,000`, and `$0` for keeping the old phone
+
+Reported notebook results:
+
+- total phones in period 1: `38`
+- demand points covered: `60 / 98` (`61.2%`)
+- weighted coverage: `71.0 / 109.0` (`65.1%`)
+- installation costs: `$234,500.00`
+
+The notebook also saves the visualization to `data/emergency_callbox_optimization.png`.
+
+## Repository Layout
+
+- `notebooks/pdf_map_coord_extraction.ipynb`: spatial preprocessing notebook
+- `notebooks/callbox_optimization_gurobi.ipynb`: optimization notebook
+- `data/campus_map.pdf`: source map
+- `data/building_outline_vertices.csv`: traced building vertices
+- `data/solid_line_vertices.csv`: traced main route vertices
+- `data/dotted_line_vertices.csv`: traced feeder route vertices
+- `data/exisiting_and_candidate_callbox_coords.csv`: existing and candidate phone locations
+- `data/existing_callbox_current_state.csv`: current phone condition and type data
+- `data/demand_point_coords.csv`: generated demand points and weights
+- `data/emergency_callbox_optimization.png`: saved optimization figure
 
 ## Requirements
 
-This project is organized around Jupyter notebooks. A typical Python environment for the notebooks includes:
+The notebooks use:
 
 - `jupyter`
 - `pandas`
@@ -67,16 +89,8 @@ This project is organized around Jupyter notebooks. A typical Python environment
 ## How To Run
 
 1. Create a Python environment and install the required packages.
-2. Launch Jupyter Notebook or JupyterLab in the repository root.
-3. Run `pdf_map_coord_extraction.ipynb` if you want to regenerate the spatial input CSVs from the map and traced geometry.
-4. Run `callbox_optimization_gurobi.ipynb` to solve the optimization model and regenerate the final figure.
+2. Launch Jupyter Notebook or JupyterLab from the repository root.
+3. Run `notebooks/pdf_map_coord_extraction.ipynb` to regenerate the spatial CSV inputs.
+4. Run `notebooks/callbox_optimization_gurobi.ipynb` to solve the model and regenerate the output figure.
 
-Note: keep the filename `exisiting_and_candidate_callbox_coords.csv` as-is unless you also update the notebook references.
-
-## Team
-
-- Rui Zhao
-- Serena Sun
-- Arantzazu Arregui Gonzalez
-- Chloee Liew
-- Nicholas Stanfield
+Note: keep the filename `data/exisiting_and_candidate_callbox_coords.csv` as-is unless you also update the notebook references.
